@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Information</title>
+
+    <script type="module">
+        import { Web3 } from "https://cdn.jsdelivr.net/npm/web3@4.16.0/+esm";
+
+        const web3 = new Web3(
+            window.location.origin + "/rpc"
+        );
+
+        async function getTransactionInfo() {
+            try {
+                const txHash =
+                    document.getElementById("transactionhash")
+                    .value.trim();
+
+                if (txHash === "") {
+                    throw new Error("Please enter a transaction hash.");
+                }
+
+                const transactionInfo =
+                    await web3.eth.getTransaction(txHash);
+
+                if (!transactionInfo) {
+                    throw new Error("Transaction not found.");
+                }
+
+                const keys = Object.keys(transactionInfo);
+                let str = "";
+
+                for (let i = 0; i < keys.length; i++) {
+                    const value =
+                        transactionInfo[keys[i]];
+
+                    str +=
+                        "<tr>" +
+                        "<td><b>" + keys[i] + "</b></td>" +
+                        "<td>" + stringifyValue(value) + "</td>" +
+                        "</tr>";
+                }
+
+                document.getElementById("transactioninfo").innerHTML =
+                    "<table border='1' cellpadding='6' cellspacing='0'>" +
+                    str +
+                    "</table>";
+            }
+            catch (error) {
+                document.getElementById("transactioninfo").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        function stringifyValue(value) {
+            if (typeof value === "bigint") {
+                return value.toString();
+            }
+
+            if (Array.isArray(value) || typeof value === "object") {
+                try {
+                    return JSON.stringify(
+                        value,
+                        (key, val) =>
+                            typeof val === "bigint"
+                                ? val.toString()
+                                : val
+                    );
+                }
+                catch {
+                    return String(value);
+                }
+            }
+
+            return String(value);
+        }
+
+        window.getTransactionInfo = getTransactionInfo;
+    </script>
+</head>
+
+<body>
+
+    <h1>Transaction Information</h1>
+
+    <hr>
+
+    <label>Enter transaction hash: </label>
+
+    <input
+        type="text"
+        size="70"
+        id="transactionhash"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="getTransactionInfo()">
+        Get Transaction
+    </button>
+
+    <hr>
+
+    <div id="transactioninfo"></div>
+
+</body>
+</html>

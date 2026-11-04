@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Block Information</title>
+
+    <script type="module">
+        import { ethers }
+        from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm";
+
+        const rpcURL =
+            window.location.origin + "/rpc";
+
+        const provider =
+            new ethers.JsonRpcProvider(rpcURL);
+
+        async function getBlockInfo(blockNumber) {
+
+            try {
+
+                const input = blockNumber.trim();
+
+                if (input === "") {
+                    throw new Error("Please enter a block number.");
+                }
+
+                const number = Number(input);
+
+                if (!Number.isInteger(number) || number < 0) {
+                    throw new Error("Block number must be a non-negative integer.");
+                }
+
+                const block =
+                    await provider.getBlock(number);
+
+                if (block === null) {
+                    throw new Error(
+                        "Block " + number + " was not found."
+                    );
+                }
+
+                const blockInfo =
+                    block.toJSON();
+
+                let rows = "";
+
+                for (const key in blockInfo) {
+
+                    rows +=
+                        "<tr>" +
+                        "<td><b>" + key + "</b></td>" +
+                        "<td>" +
+                        escapeHtml(
+                            JSON.stringify(
+                                blockInfo[key],
+                                bigIntReplacer,
+                                2
+                            )
+                        ) +
+                        "</td>" +
+                        "</tr>";
+                }
+
+                document.getElementById(
+                    "blockinfo"
+                ).innerHTML =
+                    "<table border='1' cellpadding='6' cellspacing='0'>" +
+                    rows +
+                    "</table>";
+            }
+            catch (error) {
+
+                document.getElementById(
+                    "blockinfo"
+                ).innerHTML =
+                    "Error: " + error.message;
+
+                console.error(error);
+            }
+        }
+
+        function bigIntReplacer(key, value) {
+            return typeof value === "bigint"
+                ? value.toString()
+                : value;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;");
+        }
+
+        window.getBlockInfo =
+            getBlockInfo;
+    </script>
+</head>
+
+<body>
+
+    <h1>Block Information</h1>
+
+    <hr>
+
+    <label>
+        Enter Block Number:
+    </label>
+
+    <input
+        type="text"
+        id="blocknumber"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="getBlockInfo(
+            document.getElementById('blocknumber').value
+        )">
+        Get Block Information
+    </button>
+
+    <hr>
+
+    <div id="blockinfo"></div>
+
+</body>
+</html>

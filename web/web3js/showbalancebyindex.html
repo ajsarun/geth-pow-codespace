@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Account Balance by Index</title>
+
+    <script type="module">
+        import { Web3 } from "https://cdn.jsdelivr.net/npm/web3@4.16.0/+esm";
+
+        const web3 = new Web3(
+            window.location.origin + "/rpc"
+        );
+
+        let accounts = [];
+
+        async function getAccounts() {
+            try {
+                accounts = await web3.eth.getAccounts();
+            }
+            catch (error) {
+                document.getElementById("accountBalance").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        async function accountBalanceByIndex() {
+            try {
+                const indexText =
+                    document.getElementById("index").value.trim();
+
+                if (indexText === "") {
+                    throw new Error("Please enter an account index.");
+                }
+
+                const index = Number(indexText);
+
+                if (!Number.isInteger(index) || index < 0) {
+                    throw new Error("Account index must be a non-negative integer.");
+                }
+
+                if (index >= accounts.length) {
+                    throw new Error(
+                        "Account index out of range. Total accounts: " +
+                        accounts.length
+                    );
+                }
+
+                const balance =
+                    await web3.eth.getBalance(accounts[index]);
+
+                document.getElementById("accountBalance").innerHTML =
+                    "Address: " +
+                    accounts[index] +
+                    "<br>Balance: " +
+                    web3.utils.fromWei(balance, "ether") +
+                    " ETH";
+            }
+            catch (error) {
+                document.getElementById("accountBalance").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        window.getAccounts = getAccounts;
+        window.accountBalanceByIndex = accountBalanceByIndex;
+    </script>
+</head>
+
+<body onload="getAccounts()">
+
+    <h1>Node 1</h1>
+
+    <label>Account index: </label>
+
+    <input
+        type="text"
+        id="index"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="accountBalanceByIndex()">
+        Account Balance
+    </button>
+
+    <br><br>
+
+    <div id="accountBalance"></div>
+
+</body>
+</html>

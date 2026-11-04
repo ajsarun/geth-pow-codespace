@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Information</title>
+
+    <script type="module">
+        import { ethers }
+        from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm";
+
+        const provider =
+            new ethers.JsonRpcProvider(
+                window.location.origin + "/rpc"
+            );
+
+        async function getTransactionInfo() {
+            try {
+                const txHash =
+                    document.getElementById(
+                        "transactionhash"
+                    ).value.trim();
+
+                if (txHash === "") {
+                    throw new Error(
+                        "Please enter a transaction hash."
+                    );
+                }
+
+                const transactionResponse =
+                    await provider
+                    .getTransaction(txHash);
+
+                if (
+                    transactionResponse === null
+                ) {
+                    throw new Error(
+                        "Transaction not found."
+                    );
+                }
+
+                const transactionInfo =
+                    transactionResponse.toJSON();
+
+                let str = "";
+
+                for (
+                    const key in transactionInfo
+                ) {
+                    str +=
+                        "<tr>" +
+                        "<td><b>" +
+                        key +
+                        "</b></td>" +
+
+                        "<td>" +
+                        JSON.stringify(
+                            transactionInfo[key],
+                            bigIntReplacer
+                        ) +
+                        "</td>" +
+
+                        "</tr>";
+                }
+
+                document.getElementById(
+                    "transactioninfo"
+                ).innerHTML =
+                    "<table border='1' " +
+                    "cellpadding='6' " +
+                    "cellspacing='0'>" +
+                    str +
+                    "</table>";
+            }
+            catch (error) {
+                document.getElementById(
+                    "transactioninfo"
+                ).innerHTML =
+                    "Error: " +
+                    error.message;
+            }
+        }
+
+        function bigIntReplacer(
+            key,
+            value
+        ) {
+            return typeof value === "bigint"
+                ? value.toString()
+                : value;
+        }
+
+        window.getTransactionInfo =
+            getTransactionInfo;
+    </script>
+</head>
+
+<body>
+
+    <h1>Transaction Information</h1>
+
+    <hr>
+
+    <label>
+        Enter transaction hash:
+    </label>
+
+    <input
+        type="text"
+        size="100"
+        id="transactionhash"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="getTransactionInfo()">
+        Get Transaction
+    </button>
+
+    <hr>
+
+    <div id="transactioninfo"></div>
+
+</body>
+</html>

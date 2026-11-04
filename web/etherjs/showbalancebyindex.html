@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Account Balance by Index</title>
+
+    <script type="module">
+        import { ethers }
+        from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm";
+
+        const provider =
+            new ethers.JsonRpcProvider(
+                window.location.origin + "/rpc"
+            );
+
+        let accounts = [];
+
+        async function getAccounts() {
+            try {
+                accounts =
+                    await provider.listAccounts();
+            }
+            catch (error) {
+                document.getElementById(
+                    "accountBalance"
+                ).innerHTML =
+                    "Error: " + error.message;
+            }
+        }
+
+        async function accountBalanceByIndex() {
+            try {
+                const indexText =
+                    document.getElementById(
+                        "index"
+                    ).value.trim();
+
+                if (indexText === "") {
+                    throw new Error(
+                        "Please enter an account index."
+                    );
+                }
+
+                const index =
+                    Number(indexText);
+
+                if (
+                    !Number.isInteger(index) ||
+                    index < 0
+                ) {
+                    throw new Error(
+                        "Account index must be a non-negative integer."
+                    );
+                }
+
+                if (index >= accounts.length) {
+                    throw new Error(
+                        "Account index out of range. Total accounts: " +
+                        accounts.length
+                    );
+                }
+
+                const address =
+                    await accounts[index]
+                    .getAddress();
+
+                const balance =
+                    await provider
+                    .getBalance(address);
+
+                document.getElementById(
+                    "accountBalance"
+                ).innerHTML =
+                    "Address: " +
+                    address +
+                    "<br>Balance: " +
+                    ethers.formatEther(balance) +
+                    " ETH";
+            }
+            catch (error) {
+                document.getElementById(
+                    "accountBalance"
+                ).innerHTML =
+                    "Error: " + error.message;
+            }
+        }
+
+        window.getAccounts =
+            getAccounts;
+
+        window.accountBalanceByIndex =
+            accountBalanceByIndex;
+    </script>
+</head>
+
+<body onload="getAccounts()">
+
+    <h1>Node 1</h1>
+
+    <label>
+        Account index:
+    </label>
+
+    <input
+        type="text"
+        id="index"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="accountBalanceByIndex()">
+        Account Balance
+    </button>
+
+    <br><br>
+
+    <div id="accountBalance"></div>
+
+</body>
+</html>

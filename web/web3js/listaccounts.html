@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>List Accounts</title>
+
+    <script type="module">
+
+        import { Web3 }
+        from "https://cdn.jsdelivr.net/npm/web3@4.16.0/+esm";
+
+        const rpcURL =
+            window.location.origin + "/rpc";
+
+        const web3 =
+            new Web3(rpcURL);
+
+
+        async function listAccounts() {
+
+            try {
+
+                const accounts =
+                    await web3.eth.getAccounts();
+
+                let accountList = "";
+
+
+                for (
+                    let i = 0;
+                    i < accounts.length;
+                    i++
+                ) {
+
+                    accountList +=
+                        "<li>" +
+                        accounts[i] +
+                        "</li>";
+                }
+
+
+                document.getElementById(
+                    "listOfAccounts"
+                ).innerHTML =
+                    '<ol start="0">' +
+                    accountList +
+                    "</ol>";
+
+            }
+            catch (error) {
+
+                document.getElementById(
+                    "listOfAccounts"
+                ).innerHTML =
+                    "Error: " +
+                    error.message;
+
+                console.error(error);
+            }
+        }
+
+
+        window.listAccounts =
+            listAccounts;
+
+    </script>
+
+</head>
+
+
+<body>
+
+    <h1>Node 1</h1>
+
+    <button
+        type="button"
+        onclick="listAccounts()">
+        List Accounts
+    </button>
+
+    <br><br>
+
+    <div id="listOfAccounts"></div>
+
+</body>
+</html>

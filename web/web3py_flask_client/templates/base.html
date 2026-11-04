@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Web3.py Client{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            line-height: 1.5;
+        }
+
+        nav a {
+            margin-right: 16px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        th, td {
+            border: 1px solid #bbb;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+            word-break: break-word;
+        }
+
+        input {
+            padding: 6px;
+            margin: 4px 0;
+        }
+
+        button {
+            padding: 7px 14px;
+            margin-top: 8px;
+        }
+
+        .error {
+            margin-top: 16px;
+            padding: 10px;
+            border: 1px solid #aa0000;
+        }
+
+        .success {
+            margin-top: 16px;
+            padding: 10px;
+            border: 1px solid #008800;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Web3.py Ethereum Client</h1>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/accounts">Accounts</a>
+        <a href="/balance">Balance</a>
+        <a href="/block">Block</a>
+        <a href="/transaction">Transaction</a>
+        <a href="/transfer">Transfer</a>
+    </nav>
+
+    <hr>
+
+    {% block content %}{% endblock %}
+
+</body>
+</html>

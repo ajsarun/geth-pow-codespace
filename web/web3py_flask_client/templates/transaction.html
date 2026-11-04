@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Information{% endblock %}
+
+{% block content %}
+
+<h2>Transaction Information</h2>
+
+<form method="post">
+    <label>Enter Transaction Hash:</label><br>
+    <input
+        type="text"
+        name="tx_hash"
+        size="90"
+        required
+    >
+    <br>
+    <button type="submit">Get Transaction</button>
+</form>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+
+{% if tx_data %}
+<table>
+    <tr>
+        <th>Field</th>
+        <th>Value</th>
+    </tr>
+
+    {% for key, value in tx_data %}
+    <tr>
+        <td>{{ key }}</td>
+        <td>{{ value }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

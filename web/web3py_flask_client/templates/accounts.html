@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts{% endblock %}
+
+{% block content %}
+
+<h2>Node 1 Accounts</h2>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% elif accounts %}
+    <ol start="0">
+    {% for account in accounts %}
+        <li>{{ account }}</li>
+    {% endfor %}
+    </ol>
+{% else %}
+    <p>No accounts found.</p>
+{% endif %}
+
+{% endblock %}

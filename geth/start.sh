@@ -42,4 +42,5 @@ exec geth \
     --ws.port 8546 \
     --ws.api "eth,net,web3" \
     --ws.origins "*" \
+    --allow-insecure-unlock \
     --verbosity 3

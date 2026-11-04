@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Money Transfer</title>
+
+    <script type="module">
+        import { Web3 } from "https://cdn.jsdelivr.net/npm/web3@4.16.0/+esm";
+
+        const web3 = new Web3(
+            window.location.origin + "/rpc"
+        );
+
+        let coinbaseAddr;
+
+        async function getCoinbaseInfo() {
+            try {
+                coinbaseAddr =
+                    await web3.eth.getCoinbase();
+
+                document.getElementById("mainAddress").innerHTML =
+                    "Address: " + coinbaseAddr;
+
+                await getCoinbaseBalance();
+            }
+            catch (error) {
+                document.getElementById("mainAddress").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        async function getCoinbaseBalance() {
+            try {
+                const balance =
+                    await web3.eth.getBalance(coinbaseAddr);
+
+                document.getElementById("mainBalance").innerHTML =
+                    "Balance: " +
+                    web3.utils.fromWei(balance, "ether") +
+                    " ETH";
+            }
+            catch (error) {
+                document.getElementById("mainBalance").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        async function send() {
+            const to =
+                document.getElementById("to").value.trim();
+
+            const password =
+                document.getElementById("password").value;
+
+            const amount =
+                document.getElementById("amount").value.trim();
+
+            try {
+                if (to === "") {
+                    throw new Error("Please enter destination address.");
+                }
+
+                if (amount === "") {
+                    throw new Error("Please enter amount.");
+                }
+
+                const txHash =
+                    await web3.eth.personal.sendTransaction(
+                        {
+                            from: coinbaseAddr,
+                            to: to,
+                            value: web3.utils.toWei(
+                                amount,
+                                "ether"
+                            )
+                        },
+                        password
+                    );
+
+                document.getElementById("transactionHash").innerHTML =
+                    "Transaction Hash: " + txHash;
+
+                await getCoinbaseBalance();
+            }
+            catch (error) {
+                document.getElementById("transactionHash").innerHTML =
+                    "Error: " + error.message;
+                console.error(error);
+            }
+        }
+
+        window.getCoinbaseInfo = getCoinbaseInfo;
+        window.send = send;
+    </script>
+</head>
+
+<body onload="getCoinbaseInfo()">
+
+    <h1>Node 1</h1>
+
+    <h1>Money Transfer</h1>
+
+    <hr>
+
+    <h2>Main Account Info</h2>
+
+    <div id="mainAddress"></div>
+
+    <br>
+
+    <div id="mainBalance"></div>
+
+    <hr>
+
+    <label>Transfer to: </label>
+
+    <input
+        type="text"
+        size="70"
+        id="to"
+    />
+
+    <br><br>
+
+    <label>Amount (ETH): </label>
+
+    <input
+        type="text"
+        id="amount"
+    />
+
+    <br><br>
+
+    <label>Passphrase: </label>
+
+    <input
+        type="password"
+        id="password"
+    />
+
+    <br><br>
+
+    <button
+        type="button"
+        onclick="send()">
+        Send
+    </button>
+
+    <hr>
+
+    <div id="transactionHash"></div>
+
+</body>
+</html>

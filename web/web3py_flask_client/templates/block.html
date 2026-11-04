@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Block Information{% endblock %}
+
+{% block content %}
+
+<h2>Block Information</h2>
+
+<form method="post">
+    <label>Enter Block Number:</label><br>
+    <input type="number" name="block_number" min="0" required>
+    <br>
+    <button type="submit">Get Block Information</button>
+</form>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+
+{% if block_data %}
+<table>
+    <tr>
+        <th>Field</th>
+        <th>Value</th>
+    </tr>
+
+    {% for key, value in block_data %}
+    <tr>
+        <td>{{ key }}</td>
+        <td>{{ value }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

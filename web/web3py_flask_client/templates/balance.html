@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Account Balance{% endblock %}
+
+{% block content %}
+
+<h2>Account Balance by Index</h2>
+
+<form method="post">
+    <label>Account index:</label><br>
+    <input type="number" name="index" min="0" required>
+    <br>
+    <button type="submit">Account Balance</button>
+</form>
+
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}
+
+{% if result %}
+    <div class="success">
+        <p><b>Index:</b> {{ result.index }}</p>
+        <p><b>Address:</b> {{ result.address }}</p>
+        <p><b>Balance:</b> {{ result.balance }} ETH</p>
+    </div>
+{% endif %}
+
+{% if accounts %}
+<h3>Available Accounts</h3>
+<ol start="0">
+{% for account in accounts %}
+    <li>{{ account }}</li>
+{% endfor %}
+</ol>
+{% endif %}
+
+{% endblock %}

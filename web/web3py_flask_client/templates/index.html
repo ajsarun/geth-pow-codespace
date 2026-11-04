@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<h2>Node 1</h2>
+
+{% if connected %}
+    <p>Connected to Geth Node 1 at <code>http://localhost:8545</code></p>
+{% else %}
+    <p class="error">Cannot connect to Geth Node 1.</p>
+{% endif %}
+
+<ul>
+    <li><a href="/accounts">List Accounts</a></li>
+    <li><a href="/balance">Show Balance by Account Index</a></li>
+    <li><a href="/block">Block Information</a></li>
+    <li><a href="/transaction">Transaction Information</a></li>
+    <li><a href="/transfer">Money Transfer</a></li>
+</ul>
+
+{% endblock %}
