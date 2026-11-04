@@ -68,7 +68,7 @@ A typical repository structure is:
 └── compose.yaml
 ```
 
-The exact filenames in your repository may differ slightly.
+
 
 ---
 
