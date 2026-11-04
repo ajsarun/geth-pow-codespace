@@ -13,7 +13,7 @@ echo " Geth: v1.10.26"
 echo " Chain ID: 2026"
 echo "========================================"
 
-# Initialize blockchain เฉพาะครั้งแรก
+# Initialize blockchain only the first time.
 if [ ! -d "${DATADIR}/geth/chaindata" ]; then
     echo "Initializing genesis block..."
 
