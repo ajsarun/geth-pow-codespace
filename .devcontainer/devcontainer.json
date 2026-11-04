@@ -1,0 +1,46 @@
+{
+  "name": "Two-Node Ethereum PoW Lab",
+
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  "postCreateCommand": "docker compose pull",
+
+  "forwardPorts": [
+    8545,
+    8546,
+    9545,
+    9546
+  ],
+
+  "portsAttributes": {
+    "8545": {
+      "label": "Node 1 JSON-RPC",
+      "visibility": "private"
+    },
+    "8546": {
+      "label": "Node 1 WebSocket",
+      "visibility": "private"
+    },
+    "9545": {
+      "label": "Node 2 JSON-RPC",
+      "visibility": "private"
+    },
+    "9546": {
+      "label": "Node 2 WebSocket",
+      "visibility": "private"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "JuanBlanco.solidity",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}
