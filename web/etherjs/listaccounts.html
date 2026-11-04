@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+
+    <script type="module">
+
+        import { ethers }
+        from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm";
+
+
+        const rpcURL =
+            window.location.origin + "/rpc";
+
+        const provider =
+            new ethers.JsonRpcProvider(rpcURL);
+
+        async function listAccounts() {
+
+            try {
+
+                const accounts =
+                    await provider.listAccounts();
+
+                let accountList = "";
+
+                for (let i = 0; i < accounts.length; i++) {
+
+                    const address =
+                        await accounts[i].getAddress();
+
+                    accountList +=
+                        "<li>" + address + "</li>";
+                }
+
+                document.getElementById(
+                    "listOfAccounts"
+                ).innerHTML =
+                    '<ol start="0">' +
+                    accountList +
+                    "</ol>";
+
+            }
+            catch (error) {
+
+                document.getElementById(
+                    "listOfAccounts"
+                ).innerHTML =
+                    error.toString();
+
+                console.error(error);
+            }
+        }
+
+        // ทำให้ onclick ใน HTML เรียกได้
+        window.listAccounts = listAccounts;
+
+    </script>
+
+</head>
+
+
+<body>
+
+    <h1>Node 1</h1>
+
+    <button
+        type="button"
+        onclick="listAccounts()">
+        List Accounts
+    </button>
+
+    <br><br>
+
+    <div id="listOfAccounts"></div>
+
+</body>
+
+</html>

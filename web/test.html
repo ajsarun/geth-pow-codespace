@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>RPC Test</h1>
+
+<button onclick="testRPC()">Test RPC</button>
+
+<pre id="result"></pre>
+
+<script>
+
+async function testRPC() {
+
+    document.getElementById("result").innerText =
+        "Calling RPC...";
+
+    try {
+
+        const response = await fetch("/rpc", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "eth_blockNumber",
+                params: [],
+                id: 1
+            })
+        });
+
+        const text = await response.text();
+
+        document.getElementById("result").innerText =
+            text;
+
+    }
+    catch (error) {
+
+        document.getElementById("result").innerText =
+            error;
+    }
+}
+
+</script>
+
+</body>
+</html>
