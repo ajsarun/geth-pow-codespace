@@ -176,8 +176,6 @@ Append one of these paths to that address:
 | Transaction information | `/web3js/transactioninfo.html` | `/etherjs/transactioninfo.html` |
 | Transfer ETH | `/web3js/transfer.html` | `/etherjs/transfer.html` |
 
-**Existing filename detail:** the ethers.js block page is currently named `ิblockinfo.html`, with a leading Thai character (U+0E34). Use the encoded URL above or click the file in the `/etherjs/` directory listing. `/etherjs/blockinfo.html` will return 404 with the current filename.
-
 Browser clients send requests to `window.location.origin + "/rpc"`. The server forwards them to `http://localhost:8545`. This avoids treating the browser's `localhost` as the Codespace and keeps requests on the same HTTPS origin.
 
 Use this server rather than opening the HTML files directly or using a static-only server: the clients need its `POST /rpc` handler. The JavaScript libraries load from jsDelivr, so the browser needs internet access. No npm install or MetaMask setup is required.
