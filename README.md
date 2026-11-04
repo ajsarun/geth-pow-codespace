@@ -1,826 +1,323 @@
 # Private Ethereum PoW Lab on GitHub Codespaces
 
-This repository provides a small **private Ethereum Proof-of-Work network** for teaching and experimentation.
+A two-node private Ethereum network for teaching accounts, transactions, mining, blocks, JSON-RPC, and peer synchronization. Students can use the Geth console or compare Web3.js, ethers.js, web3.py, and Flask clients against the same blockchain.
 
-It is designed to run entirely inside **GitHub Codespaces**, so students do not need to install Geth, Docker, Node.js, or other blockchain software on their own computers.
+The lab uses **Geth v1.10.26**, **Ethash Proof of Work**, chain ID **2026**, and network ID **2026**. This is a legacy educational network; Ethereum Mainnet uses Proof of Stake.
 
-The environment contains:
+## Repository layout
 
-- Two private Ethereum nodes
-- Geth v1.10.26
-- Ethash Proof of Work
-- A shared private genesis block
-- Manual peer connection between Node 1 and Node 2
-- Geth JavaScript Console access
-- JSON-RPC access
-- Web3.js browser clients
-- ethers.js browser clients
-- web3.py command-line clients
-- web3.py + Flask browser client
+| Path | Purpose |
+| --- | --- |
+| `.devcontainer/devcontainer.json` | Codespaces environment with Docker-in-Docker and RPC port forwarding |
+| `compose.yaml` | Two Geth services, their ports, and persistent data volumes |
+| `geth/genesis.json` | Shared genesis configuration with no pre-funded accounts |
+| `geth/start.sh` | Initializes each data directory on first startup and starts Geth |
+| `scripts/run-all-nodes.sh` | Starts both nodes and connects them |
+| `scripts/connect-nodes.sh` | Adds Node 1 as a peer of Node 2 and prints peer counts |
+| `scripts/usenode1.sh` | Opens Node 1's Geth JavaScript console |
+| `scripts/usenode2.sh` | Opens Node 2's Geth JavaScript console |
+| `scripts/run-web.sh` | Starts the static web server and RPC proxy on port 8000 |
+| `web/server.py` | Serves files from the current directory and proxies `POST /rpc` to Node 1 |
+| `web/web3js/` | Five Web3.js browser examples |
+| `web/etherjs/` | Five ethers.js browser examples; the folder is named `etherjs` |
+| `web/web3py/` | Five web3.py command-line examples and `requirements.txt` |
+| `web/web3py_flask_client/` | Flask application, `requirements.txt`, and HTML templates |
 
-> This lab uses a legacy Proof-of-Work version of Ethereum for educational purposes. Ethereum Mainnet currently uses Proof of Stake.
+The Flask templates are `accounts.html`, `balance.html`, `base.html`, `block.html`, `index.html`, `transaction.html`, and `transfer.html`.
 
----
+## 1. Open a Codespace
 
-## 1. Repository Overview
+On the repository page, select **Code → Codespaces → Create codespace on main** and wait for setup to finish. The setup pulls the Geth Docker image; it does not start the nodes.
 
-A typical repository structure is:
+Run all commands below from the **repository root**, unless a section explicitly changes directory. Use separate terminals for consoles and servers.
 
-```text
-.
-├── .devcontainer/
-│   └── devcontainer.json
-│
-├── geth/
-│   ├── genesis.json
-│   └── start.sh
-│
-├── scripts/
-│   ├── run-node1.sh
-│   ├── run-node2.sh
-│   ├── run-all.sh
-│   ├── connect-nodes.sh
-│   ├── console-node1.sh
-│   ├── console-node2.sh
-│   └── run-web.sh
-│
-├── web/
-│   ├── server.py
-│   ├── listaccounts.html
-│   ├── showbalancebyindex.html
-│   ├── blockinfo.html
-│   ├── transactioninfo.html
-│   └── transfer.html
-│
-├── web3py_clients/
-│   ├── listaccounts.py
-│   ├── showbalancebyindex.py
-│   ├── blockinfo.py
-│   ├── transactioninfo.py
-│   ├── transfer.py
-│   └── requirements.txt
-│
-├── web3py_flask_client/
-│   ├── app.py
-│   ├── requirements.txt
-│   └── templates/
-│
-└── compose.yaml
-```
-
-
-
----
-
-# 2. Open the Repository in GitHub Codespaces
-
-From the GitHub repository page:
-
-1. Click **Code**
-2. Select **Codespaces**
-3. Click **Create codespace on main**
-
-GitHub will create a cloud development environment and open VS Code in the browser.
-
-The Codespace uses Docker to run the Ethereum nodes.
-
----
-
-# 3. Start the Ethereum Nodes
-
-## Start Node 1
+## 2. Start and connect the nodes
 
 ```bash
-./scripts/run-node1.sh
+./scripts/run-all-nodes.sh
 ```
 
-## Start Node 2
+This starts `node1` and `node2`, waits briefly, calls `connect-nodes.sh`, and displays container status.
 
-```bash
-./scripts/run-node2.sh
-```
-
-## Start Both Nodes
-
-```bash
-./scripts/run-all.sh
-```
-
-You can also start the nodes directly with Docker Compose:
-
-```bash
-docker compose up -d node1 node2
-```
-
-Check their status:
+Check status or inspect startup logs:
 
 ```bash
 docker compose ps
+docker compose logs --tail=50 node1 node2
 ```
 
-You should see both containers running.
+To start services individually instead:
 
-Example:
-
-```text
-NAME         STATUS
-geth-node1   Up
-geth-node2   Up
+```bash
+docker compose up -d node1
+docker compose up -d node2
+./scripts/connect-nodes.sh
 ```
 
----
-
-# 4. Connect Node 1 and Node 2
-
-The nodes use the same genesis block and network ID, but they are not automatically connected when `--nodiscover` is used.
-
-Run:
+Both nodes use `--nodiscover`, so connect them explicitly. If first startup takes longer than the script's short wait, wait for both IPC endpoints to be ready and rerun:
 
 ```bash
 ./scripts/connect-nodes.sh
 ```
 
-The script:
-
-1. Reads the enode URL of Node 1
-2. Replaces the internal address with the Docker hostname `node1`
-3. Calls `admin.addPeer(...)` on Node 2
-4. Checks the peer count of both nodes
-
-After a successful connection, each node should report:
+Each node should eventually report one peer. In either Geth console, inspect:
 
 ```javascript
 net.peerCount
-```
-
-Result:
-
-```text
-1
-```
-
-You can also inspect the peer information:
-
-```javascript
 admin.peers
 ```
 
----
+## 3. Open the Geth consoles
 
-# 5. Open the Geth JavaScript Console
+| Node | Script | Equivalent command |
+| --- | --- | --- |
+| Node 1 | `./scripts/usenode1.sh` | `docker compose exec node1 geth attach /data/geth.ipc` |
+| Node 2 | `./scripts/usenode2.sh` | `docker compose exec node2 geth attach /data/geth.ipc` |
 
-## Node 1 Console
+Use a separate terminal for each console. Enter `exit` to leave a console; this does not stop its node.
 
-```bash
-./scripts/console-node1.sh
-```
+### Create accounts and mine test ETH
 
-Equivalent command:
-
-```bash
-docker compose exec node1 geth attach /data/geth.ipc
-```
-
-## Node 2 Console
-
-```bash
-./scripts/console-node2.sh
-```
-
-Equivalent command:
-
-```bash
-docker compose exec node2 geth attach /data/geth.ipc
-```
-
-You should see the Geth JavaScript Console prompt:
-
-```text
-Welcome to the Geth JavaScript console!
-
->
-```
-
----
-
-# 6. Useful Geth Console Commands
-
-## Show accounts
+New data volumes contain no accounts. In the **Node 1 console**:
 
 ```javascript
 eth.accounts
-```
-
-Initially, the result may be:
-
-```javascript
-[]
-```
-
-because no accounts are pre-funded or pre-created.
-
----
-
-## Create an Account on Node 1
-
-```javascript
 var account1 = personal.newAccount("node1pass")
-```
-
-Check:
-
-```javascript
-eth.accounts
-```
-
----
-
-## Create an Account on Node 2
-
-```javascript
-var account2 = personal.newAccount("node2pass")
-```
-
----
-
-## Check Account Balance
-
-```javascript
-eth.getBalance(account1)
-```
-
-Convert Wei to Ether:
-
-```javascript
-web3.fromWei(
-    eth.getBalance(account1),
-    "ether"
-)
-```
-
----
-
-## Set the Miner Account
-
-On Node 1:
-
-```javascript
 miner.setEtherbase(account1)
-```
-
-Check:
-
-```javascript
-eth.coinbase
-```
-
----
-
-## Start Mining
-
-```javascript
 miner.start(1)
 ```
 
-The argument `1` means one mining thread.
+The password is an example for this private lab. Mining uses one CPU thread. Ethash dataset generation can delay the first block.
 
-Check:
+In the **Node 2 console**:
+
+```javascript
+var account2 = personal.newAccount("node2pass")
+account2
+```
+
+Copy the address printed for `account2` for later transfers. Variables belong to their individual console sessions; `account2` is not automatically available in Node 1's console.
+
+On Node 1, check progress and balance:
 
 ```javascript
 eth.mining
+eth.blockNumber
+eth.coinbase
+web3.fromWei(eth.getBalance(eth.accounts[0]), "ether")
+eth.getBlock("latest")
+txpool.status
 ```
 
----
+On Node 2, check `eth.blockNumber` to observe synchronization.
 
-## Stop Mining
+Keep mining while submitting transactions so they can be included in blocks. Stop mining when finished:
 
 ```javascript
 miner.stop()
 ```
 
----
+Accounts and private keys are local to each node. Connecting the nodes shares blockchain data, but does not copy keystores: Node 1's `eth.accounts` will not list an account created only on Node 2.
 
-## Check the Current Block Number
+## 4. Endpoints and client choices
 
-```javascript
-eth.blockNumber
-```
+These endpoints are accessible from processes **inside the Codespace**:
 
----
+| Node | HTTP JSON-RPC | WebSocket |
+| --- | --- | --- |
+| Node 1 | `http://localhost:8545` | `ws://localhost:8546` |
+| Node 2 | `http://localhost:9545` | `ws://localhost:9546` |
 
-## View the Latest Block
-
-```javascript
-eth.getBlock("latest")
-```
-
----
-
-## Check the Transaction Pool
-
-```javascript
-txpool.status
-```
-
----
-
-# 7. JSON-RPC Endpoints
-
-Inside the Codespace:
-
-```text
-Node 1 HTTP RPC
-http://localhost:8545
-```
-
-```text
-Node 2 HTTP RPC
-http://localhost:9545
-```
-
-Example JSON-RPC request to Node 1:
+Both containers listen internally on 8545/8546; Docker maps Node 2 to host ports 9545/9546.
 
 ```bash
-curl -X POST \
-  -H "Content-Type: application/json" \
+curl -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
   http://localhost:8545
 ```
 
-Example response:
+The returned block number is hexadecimal.
 
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": "0x15"
-}
-```
+| Client | Location | How to run |
+| --- | --- | --- |
+| Web3.js 4.16.0 | `web/web3js/` | Start `./scripts/run-web.sh`; open `/web3js/` on port 8000 |
+| ethers.js 6.7.0 | `web/etherjs/` | Use the same server; open `/etherjs/` on port 8000 |
+| web3.py 7.x CLI | `web/web3py/` | Install Python dependencies and run a Python script |
+| Flask + web3.py | `web/web3py_flask_client/` | Install dependencies and run `app.py`; open port 8000 |
 
----
+All clients target **Node 1** by default.
 
-# 8. Browser Clients
+## 5. Run Web3.js and ethers.js browser clients
 
-Browser applications cannot normally use:
-
-```text
-http://localhost:8545
-```
-
-because `localhost` in the browser refers to the user's local computer, not the Codespace.
-
-For browser clients, this repository uses a small Python proxy server.
-
-The browser communicates with:
-
-```text
-/rpc
-```
-
-and the proxy forwards the request to:
-
-```text
-http://localhost:8545
-```
-
-The architecture is:
-
-```text
-Browser
-   |
-   | HTTPS
-   v
-GitHub Codespaces Port 8000
-   |
-   | /rpc
-   v
-Python Proxy
-   |
-   v
-Geth Node 1 :8545
-```
-
----
-
-# 9. Start the Browser Client Server
-
-Run:
+From the repository root:
 
 ```bash
 ./scripts/run-web.sh
 ```
 
-or:
+Equivalent commands:
 
 ```bash
 cd web
 python3 server.py
 ```
 
-The web server runs on:
+Leave this terminal running. In Codespaces, open the **PORTS** tab and open port **8000** in the browser. If it is not listed, select **Forward a Port** and enter `8000`. Keep its visibility **Private**.
 
-```text
-Port 8000
-```
+The forwarded address resembles `https://<codespace-name>-8000.app.github.dev/`. The root displays a directory listing; open `web3js/` or `etherjs/`.
 
-In GitHub Codespaces:
+Append one of these paths to that address:
 
-1. Open the **PORTS** tab
-2. Find port `8000`
-3. Click **Open in Browser**
+| Example | Web3.js path | ethers.js path |
+| --- | --- | --- |
+| List Node 1 accounts | `/web3js/listaccounts.html` | `/etherjs/listaccounts.html` |
+| Balance by account index | `/web3js/showbalancebyindex.html` | `/etherjs/showbalancebyindex.html` |
+| Block information | `/web3js/blockinfo.html` | `/etherjs/blockinfo.html` |
+| Transaction information | `/web3js/transactioninfo.html` | `/etherjs/transactioninfo.html` |
+| Transfer ETH | `/web3js/transfer.html` | `/etherjs/transfer.html` |
 
-The URL will look similar to:
+**Existing filename detail:** the ethers.js block page is currently named `ิblockinfo.html`, with a leading Thai character (U+0E34). Use the encoded URL above or click the file in the `/etherjs/` directory listing. `/etherjs/blockinfo.html` will return 404 with the current filename.
 
-```text
-https://<codespace-name>-8000.app.github.dev/
-```
+Browser clients send requests to `window.location.origin + "/rpc"`. The server forwards them to `http://localhost:8545`. This avoids treating the browser's `localhost` as the Codespace and keeps requests on the same HTTPS origin.
 
----
+Use this server rather than opening the HTML files directly or using a static-only server: the clients need its `POST /rpc` handler. The JavaScript libraries load from jsDelivr, so the browser needs internet access. No npm install or MetaMask setup is required.
 
-# 10. Web3.js Browser Clients
+### Transfer prerequisites
 
-The Web3.js clients use **Web3.js v4** as an ES module.
+1. Create an account on Node 1.
+2. Set that account as Node 1's etherbase and mine enough ETH for the amount plus fees.
+3. Open a transfer page and enter the recipient address, amount in ETH, and sender's password.
+4. Keep Node 1 mining until the transaction is included in a block.
 
-The provider is created with:
+The JavaScript transfer pages use Node 1's coinbase account. Web3.js uses `personal_sendTransaction`; ethers.js unlocks the account for 60 seconds and sends through a signer. The ethers.js page waits for confirmation after showing the transaction hash.
 
-```javascript
-import { Web3 }
-from "https://cdn.jsdelivr.net/npm/web3@4.16.0/+esm";
+## 6. Run web3.py command-line clients
 
-const web3 = new Web3(
-    window.location.origin + "/rpc"
-);
-```
+These scripts run inside the Codespace and connect directly to Node 1. They do not need the browser proxy server.
 
-Available clients include:
-
-```text
-listaccounts.html
-showbalancebyindex.html
-blockinfo.html
-transactioninfo.html
-transfer.html
-```
-
-Example URLs:
-
-```text
-https://<codespace-name>-8000.app.github.dev/listaccounts.html
-```
-
-```text
-https://<codespace-name>-8000.app.github.dev/blockinfo.html
-```
-
-The five Web3.js examples demonstrate:
-
-1. Listing Ethereum accounts
-2. Reading an account balance
-3. Reading block information
-4. Reading transaction information
-5. Sending Ether
-
----
-
-# 11. ethers.js Browser Clients
-
-The ethers.js examples use **ethers.js v6**.
-
-The provider is created with:
-
-```javascript
-import { ethers }
-from "https://cdn.jsdelivr.net/npm/ethers@6.7.0/+esm";
-
-const provider =
-    new ethers.JsonRpcProvider(
-        window.location.origin + "/rpc"
-    );
-```
-
-The same general client examples are available:
-
-```text
-listaccounts.html
-showbalancebyindex.html
-blockinfo.html
-transactioninfo.html
-transfer.html
-```
-
-These examples demonstrate the ethers.js equivalent of the Web3.js examples.
-
----
-
-# 12. web3.py Command-Line Clients
-
-The Python command-line clients connect directly to Geth because they run inside the Codespace.
-
-They do not require `server.py`.
-
-Move to the directory:
+From the repository root, create and activate a Python environment:
 
 ```bash
-cd web3py_clients
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r web/web3py/requirements.txt
 ```
 
-Install dependencies:
+If `venv` is unavailable in the Ubuntu environment, install its support package, then retry:
 
 ```bash
-pip install -r requirements.txt
+sudo apt-get update
+sudo apt-get install -y python3-venv
 ```
 
-The provider is:
+Run the desired example from the repository root:
 
-```python
-from web3 import Web3
+| Task | Command | Input |
+| --- | --- | --- |
+| List accounts | `python web/web3py/listaccounts.py` | None |
+| Show balance | `python web/web3py/showbalancebyindex.py` | Zero-based Node 1 account index |
+| Show a block | `python web/web3py/blockinfo.py` | Integer block number |
+| Show a transaction | `python web/web3py/transactioninfo.py` | Transaction hash |
+| Transfer ETH | `python web/web3py/transfer.py` | Recipient address, ETH amount, and sender password |
 
-web3 = Web3(
-    Web3.HTTPProvider(
-        "http://localhost:8545"
-    )
-)
-```
+Alternatively, `cd web/web3py` and run the filenames directly, such as `python listaccounts.py`.
 
----
+The Python transfer client attempts to use coinbase and falls back to the first account if unavailable. It submits using `personal_sendTransaction` and prints a transaction hash without waiting for mining. Use a funded sender and keep mining until confirmation.
 
-## List Accounts
+The RPC URL is a source-code constant in each Python script. To query Node 2, change that script's `RPC_URL` to `http://localhost:9545`.
+
+## 7. Run the Flask browser client
+
+**Stop the JavaScript proxy server with Ctrl+C first:** both servers use port 8000 by default.
+
+In a terminal at the repository root, reuse the Python environment:
 
 ```bash
-python listaccounts.py
+source .venv/bin/activate
+python -m pip install -r web/web3py_flask_client/requirements.txt
+python web/web3py_flask_client/app.py
 ```
 
----
+If you have not created `.venv` yet, follow the environment setup in section 6 first.
 
-## Show Balance by Account Index
+Open port **8000** through the Codespaces **PORTS** tab and navigate to the root URL. Flask exposes these routes:
 
-```bash
-python showbalancebyindex.py
-```
+| Route | Function |
+| --- | --- |
+| `/` | Home and connection status |
+| `/accounts` | List Node 1 accounts |
+| `/balance` | Balance by zero-based account index |
+| `/block` | Block information by integer block number |
+| `/transaction` | Transaction information by hash |
+| `/transfer` | Transfer ETH using the sender password |
 
----
+The browser talks to Flask; Flask uses web3.py to access `http://localhost:8545`. Flask does not use `web/server.py` or its `/rpc` route.
 
-## Show Block Information
+The transfer route uses the same coinbase/first-account fallback as the CLI and returns the submitted hash without waiting for confirmation.
 
-```bash
-python blockinfo.py
-```
+To return to the JavaScript examples, stop Flask with **Ctrl+C**, then run `./scripts/run-web.sh` from the repository root.
 
-Enter a block number when requested.
+## 8. Suggested classroom workflow
 
-Example:
+1. Start both nodes and verify their peer counts.
+2. Open both Geth consoles and create one account on each node.
+3. Mine on Node 1 and observe Node 2 receiving new blocks.
+4. List Node 1's accounts and inspect its balance through each client type.
+5. Transfer test ETH from Node 1 to the copied Node 2 account address.
+6. Use the transaction hash to inspect the transaction and its containing block.
+7. In Node 2's console, check the recipient balance:
+   `web3.fromWei(eth.getBalance(eth.accounts[0]), "ether")`.
+8. Compare the libraries' APIs while using the same underlying blockchain.
 
-```text
-Enter block number: 10
-```
+## 9. Stop or reset the lab
 
----
-
-## Show Transaction Information
-
-```bash
-python transactioninfo.py
-```
-
-Enter a transaction hash when requested.
-
----
-
-## Transfer Ether
-
-```bash
-python transfer.py
-```
-
-The program asks for:
-
-```text
-Transfer to:
-Amount (ETH):
-Passphrase:
-```
-
-and then submits the transaction through Geth.
-
----
-
-# 13. web3.py Flask Browser Client
-
-The Flask version provides all five web3.py examples through one browser application.
-
-Move to the Flask client directory:
-
-```bash
-cd web3py_flask_client
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run:
-
-```bash
-python app.py
-```
-
-The Flask application runs on port:
-
-```text
-8000
-```
-
-Open port `8000` from the Codespaces **PORTS** tab.
-
-The application contains the following pages:
-
-```text
-Home
-Accounts
-Balance
-Block
-Transaction
-Transfer
-```
-
-The architecture is:
-
-```text
-Browser
-   |
-   v
-Flask
-   |
-   v
-web3.py
-   |
-   | JSON-RPC
-   v
-Geth Node 1 :8545
-```
-
-Unlike the JavaScript browser clients, Flask and web3.py can communicate directly with `localhost:8545` because the Python application itself runs inside the Codespace.
-
----
-
-# 14. Sending Transactions
-
-The lab uses the Geth `personal` API for educational purposes.
-
-The Geth startup configuration should include:
-
-```text
---http.api "eth,net,web3,personal"
---allow-insecure-unlock
-```
-
-This allows the lab clients to use operations such as:
-
-```text
-personal_sendTransaction
-```
-
-or account unlocking through JSON-RPC.
-
-> `--allow-insecure-unlock` should only be used in a controlled private teaching environment. Do not use this configuration on a public Ethereum node or production system.
-
----
-
-# 15. Example Learning Workflow
-
-A suggested exercise sequence is:
-
-```text
-1. Start Node 1 and Node 2
-2. Connect the two nodes
-3. Open both JavaScript consoles
-4. Verify eth.accounts is empty
-5. Create one account on each node
-6. Confirm both accounts have 0 ETH
-7. Set Node 1's account as the miner account
-8. Start mining on Node 1
-9. Observe block propagation to Node 2
-10. Check the mining reward on Node 1
-11. Transfer ETH from Node 1 to Node 2
-12. Inspect the transaction
-13. Inspect the block containing the transaction
-14. Repeat the same operations using:
-    - Web3.js
-    - ethers.js
-    - web3.py
-    - Flask + web3.py
-```
-
-This allows students to compare different Ethereum client libraries while interacting with the same private blockchain.
-
----
-
-# 16. Stop the Ethereum Network
-
-Stop both containers:
+Stop containers while keeping their data:
 
 ```bash
 docker compose stop
 ```
 
-or remove the containers:
+Remove containers and the Compose network while retaining named data volumes:
 
 ```bash
 docker compose down
 ```
 
-The blockchain data is retained in Docker volumes.
+Start and reconnect later:
 
----
+```bash
+./scripts/run-all-nodes.sh
+```
 
-# 17. Reset the Blockchain
+Reopen the console, check `eth.coinbase`, set the etherbase if necessary, and call `miner.start(1)` when ready to mine again.
 
-To completely remove both nodes' blockchain data, accounts, keystores, mined blocks, and transaction history:
+**Destructive reset:** the following deletes both nodes' named data volumes, including accounts, private keys, blocks, and transaction history:
 
 ```bash
 docker compose down -v
+./scripts/run-all-nodes.sh
 ```
 
-Then restart:
+After a reset, recreate accounts and configure mining again.
 
-```bash
-docker compose up -d
-```
+Stop any Python server with **Ctrl+C**. When finished, stop the Codespace from GitHub's Codespaces page to end compute usage.
 
-The network will return to the initial genesis state.
+## 10. Troubleshooting and lab scope
 
----
+| Symptom | What to check |
+| --- | --- |
+| Script or Compose file cannot be found | Run the command from the repository root |
+| IPC connection fails during startup | Inspect `docker compose logs`, wait for startup, then rerun `connect-nodes.sh` |
+| Peer count stays at zero | Confirm both services are running and rerun `./scripts/connect-nodes.sh` |
+| Account list is empty | Create an account on the node being queried |
+| Block number stays at zero | Set an etherbase, start mining, and allow time for Ethash dataset generation |
+| Transfer fails or remains pending | Check sender, password, balance including fees, and active mining |
+| Browser reports an RPC error | Check Node 1 and use `run-web.sh` for JavaScript clients |
+| ethers.js block page returns 404 | Use the encoded filename path in section 5 |
+| Port 8000 is already in use | Stop the other proxy or Flask process before switching |
+| Flask routes show a directory listing or 404 | Stop the static proxy and start Flask; open its root URL |
+| JavaScript paths show Flask 404 pages | Stop Flask and start the static proxy |
+| Python import fails | Activate `.venv` and install the appropriate `requirements.txt` |
 
-# 18. Stop the GitHub Codespace
+This configuration is for a controlled private teaching lab. It enables the Geth `personal` API, insecure account unlocking, permissive RPC origins, and Flask debug mode. Keep forwarded ports private and use only disposable lab accounts and test ETH. Do not use this setup for production or real funds.
 
-When the lab is finished, stop the Codespace to avoid unnecessary compute usage.
-
-From GitHub:
-
-```text
-Codespaces
-→ ...
-→ Stop codespace
-```
-
-Stopping a Codespace stops compute usage, but the Codespace storage remains until the Codespace is deleted.
-
----
-
-# 19. Important Notes
-
-This repository is intended only for:
-
-- Blockchain education
-- Ethereum architecture experiments
-- JSON-RPC demonstrations
-- Geth JavaScript Console exercises
-- Web3.js exercises
-- ethers.js exercises
-- web3.py exercises
-
-It is **not intended for production use**.
-
-The network uses:
-
-```text
-Geth v1.10.26
-Ethash
-Proof of Work
-Private Genesis Block
-```
-
-This configuration is intentionally based on legacy Ethereum Proof of Work because it makes concepts such as mining, block rewards, transaction pools, peer synchronization, and block creation easy to observe in a classroom environment.
-
----
-
-# 20. Summary
-
-This Codespace provides a complete small Ethereum laboratory:
-
-```text
-                   +----------------+
-                   |    Browser     |
-                   +-------+--------+
-                           |
-          +----------------+----------------+
-          |                                 |
-          v                                 v
-   Web3.js / ethers.js                Flask Web App
-          |                                 |
-          v                                 v
-      /rpc Proxy                         web3.py
-          |                                 |
-          +---------------+-----------------+
-                          |
-                          v
-                    Geth Node 1
-                          |
-                          | P2P
-                          v
-                    Geth Node 2
-```
-
-Students can therefore experiment with the same Ethereum network using several different client technologies while learning how accounts, transactions, mining, blocks, RPC, and peer-to-peer synchronization work.
